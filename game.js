@@ -1,16 +1,16 @@
-// Importa o Firebase SDK do CDN oficial
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, set, onValue, push, remove, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+// Importa o Firebase SDK do CDN oficial (versão 13.0.0 que o seu projeto usou)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
+import { getDatabase, ref, set, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js";
 
-// ⚠️ COLOQUE AQUI AS SUAS CREDENCIAIS REAIS DO SEU FIREBASE CONSOLE
+// As suas chaves reais do Firebase
 const firebaseConfig = {
-    apiKey: "SUA_API_KEY",
-    authDomain: "SEU_PROJETO.firebaseapp.com",
-    databaseURL: "https://SEU_PROJETO-default-rtdb.firebaseio.com",
-    projectId: "SEU_PROJETO",
-    storageBucket: "SEU_PROJETO.appspot.com",
-    messagingSenderId: "SEU_ID",
-    appId: "SEU_APP_ID"
+  apiKey: "AIzaSyDs_Yo2dJAJDGxFG1YyTfGAR6-0QafYFBE",
+  authDomain: "cervido-ac1b8.firebaseapp.com",
+  projectId: "cervido-ac1b8",
+  storageBucket: "cervido-ac1b8.firebasestorage.app",
+  messagingSenderId: "990591462025",
+  appId: "1:990591462025:web:5f1bfd389d6b9e23213458",
+  measurementId: "G-BMWXY909NP"
 };
 
 // Inicializa o Firebase
@@ -36,18 +36,17 @@ window.entrarNaMesa = function() {
     document.getElementById('jogo-container').style.display = 'block';
     document.getElementById('span-sala').innerText = minhaSala;
 
-    // Regista o jogador no Firebase Realtime Database
+    // Regista o jogador no Firebase
     const jogadorRef = ref(db, `salas/${minhaSala}/jogadores/${meuIdUnico}`);
     set(jogadorRef, {
         nome: meuNome,
         time: meuTime,
-        avatar: '🧸' // Bonequinho identificador
+        avatar: '🧸'
     });
 
-    // Remove o jogador automaticamente se ele fechar a página
+    // Remove da sala se fechar o site
     onDisconnect(jogadorRef).remove();
 
-    // Ouve em tempo real quem está na sala
     ouvirSalaFirebase();
 };
 
@@ -58,7 +57,7 @@ function ouvirSalaFirebase() {
         const dados = snapshot.val();
         if (!dados) return;
 
-        // Atualiza a lista de bonequinhos/jogadores na tela
+        // Atualiza a lista de bonequinhos online
         const listaUI = document.getElementById('lista-jogadores');
         listaUI.innerHTML = '';
         
@@ -70,7 +69,7 @@ function ouvirSalaFirebase() {
             });
         }
 
-        // Atualiza os dados globais do tabuleiro se já foram sorteados
+        // Atualiza os dados globais na tela se já foram jogados
         if (dados.estadoDados) {
             atualizarVisualDados(dados.estadoDados.t1, dados.estadoDados.t2, dados.estadoDados.num);
         }
@@ -78,18 +77,16 @@ function ouvirSalaFirebase() {
 }
 
 window.rodarDadosGlobais = function() {
-    // Sorteia os 3 dados globais automaticamente
+    // Sistema sorteia os 3 dados automaticamente para todos da sala
     let t1 = Math.floor(Math.random() * 4) + 1;
     let t2 = Math.floor(Math.random() * 4) + 1;
     let num = Math.floor(Math.random() * 6) + 1;
 
-    // Envia o resultado global para o Firebase (atualiza para todos na mesma sala instantaneamente)
     const estadoRef = ref(db, `salas/${minhaSala}/estadoDados`);
     set(estadoRef, { t1, t2, num });
 };
 
 function atualizarVisualDados(t1, t2, num) {
-    // Traduz o número do time sorteado para o nome do time correspondente
     const nomesTimes = { 1: "Corinthians", 2: "Palmeiras", 3: "Flamengo", 4: "Grêmio" };
 
     document.getElementById('dado-t1').innerText = `T${t1}`;
@@ -97,9 +94,8 @@ function atualizarVisualDados(t1, t2, num) {
     document.getElementById('dado-num').innerText = num;
     
     document.getElementById('status-jogo').innerText = 
-        `Resultado Global: Time 1 (${nomesTimes[t1]}) + Time 2 (${nomesTimes[t2]}) | Número do Tabuleiro: ${num}`;
+        `Resultado Global: Time 1 (${nomesTimes[t1]}) + Time 2 (${nomesTimes[t2]}) | Número: ${num}`;
 
-    // Destaca a célula vencedora no tabuleiro de lona
     document.querySelectorAll('.num-celula').forEach(c => c.style.background = '#f9e79f');
     let celulaAtiva = document.getElementById(`cel-${num}`);
     if (celulaAtiva) {
@@ -107,4 +103,3 @@ function atualizarVisualDados(t1, t2, num) {
         celulaAtiva.style.color = '#fff';
     }
 }
-    
