@@ -22,6 +22,8 @@ let minhasApostas = {};
 
 let timeSelecionadoModal = "";
 let numeroSelecionadoModal = null;
+let ultimoSorteioProcessado = null; 
+let temporizadorID = null;
 
 window.entrarNaMesa = function() {
     meuNome = document.getElementById('nome-jogador').value.trim();
@@ -49,11 +51,10 @@ window.entrarNaMesa = function() {
 };
 
 window.abrirPainelAposta = function(time, numero) {
-    // Só deixa apostar se a rodada ainda não tiver sido sorteada
     const salaRef = ref(db, `salas/${minhaSala}/estadoDados`);
     onValue(salaRef, (snapshot) => {
         if (snapshot.exists()) {
-            alert("Aguarde a nova rodada comear para apostar!");
+            alert("Aguarde a nova rodada começar para apostar!");
             return;
         }
     }, { onlyOnce: true });
@@ -116,19 +117,24 @@ window.finalizarAposta = function() {
     btn.innerText = "Aguardando outros jogadores...";
 };
 
-window.novaRodada = function() {
-    // Limpa apostas locais e reseta estado no Firebase para todos
-    minhasApostas = {};
-    
-    const salaRef = ref(db, `salas/${minhaSala}`);
-    set(ref(db, `salas/${minhaSala}/estadoDados`), null);
+function limparEIniciarNovaRodada(isAnfitriao) {
+    if (temporizadorID) {
+        clearInterval(temporizadorID);
+        temporizadorID = null;
+    }
 
-    // Reseta o status de pronto de todos os jogadores na sala
-    onValue(ref(db, `salas/${minhaSala}/jogadores`), (snapshot) => {
+    minhasApostas = {};
+    ultimoSorteioProcessado = null;
+    
+    if (isAnfitriao) {
+        set(ref(db, `salas/${minhaSala}/estadoDados`), null);
+    }
+
+    const jogsRef = ref(db, `salas/${minhaSala}/jogadores`);
+    onValue(jogsRef, (snapshot) => {
         const jogs = snapshot.val();
         if (jogs) {
-            Object.keys(jogs.forEach || jogs).forEach(id => {
-                // Mantém o saldo atual de cada um, mas tira o "pronto" e limpa apostas
+            Object.keys(jogs).forEach(id => {
                 let j = jogs[id];
                 set(ref(db, `salas/${minhaSala}/jogadores/${id}`), {
                     nome: j.nome,
@@ -141,10 +147,11 @@ window.novaRodada = function() {
     }, { onlyOnce: true });
 
     let btn = document.getElementById('btn-finalizar');
-    btn.disabled = false;
-    btn.innerText = "🔒 Finalizar Aposta";
-    document.getElementById('btn-nova-rodada').style.display = 'none';
-};
+    if (btn) {
+        btn.disabled = false;
+        btn.innerText = "🔒 Finalizar Aposta";
+    }
+}
 
 function ouvirSalaFirebase() {
     const salaRef = ref(db, `salas/${minhaSala}`);
@@ -159,12 +166,15 @@ function ouvirSalaFirebase() {
         let somaTotalApostasCasas = {};
         let todosProntos = true;
         let totalJogadores = 0;
+        let listaIdsJogadores = [];
 
         if (dados.jogadores) {
-            const jogadoresArr = Object.values(dados.jogadores);
-            totalJogadores = jogadoresArr.length;
+            const jogadoresObj = dados.jogadores;
+            listaIdsJogadores = Object.keys(jogadoresObj);
+            totalJogadores = listaIdsJogadores.length;
 
-            jogadoresArr.forEach(j => {
+            listaIdsJogadores.forEach(id => {
+                let j = jogadoresObj[id];
                 let li = document.createElement('li');
                 let statusPronto = j.pronto ? "✅ Pronto" : "⏳ A apostar";
                 li.innerHTML = `🧸 <b>${j.nome}</b> - ${j.saldo} 🪙 [${statusPronto}]`;
@@ -182,7 +192,6 @@ function ouvirSalaFirebase() {
             });
         }
 
-        // Atualiza os valores visuais nas caixas do tabuleiro
         document.querySelectorAll('.casa-time').forEach(el => {
             el.querySelector('small').innerHTML = `Apostas: 0`;
         });
@@ -199,18 +208,43 @@ function ouvirSalaFirebase() {
             }
         }
 
-        // Se todos estiverem prontos e os dados ainda não foram sorteados
         if (totalJogadores > 0 && todosProntos && !dados.estadoDados) {
-            if (meuIdUnico === Object.keys(dados.jogadores)[0]) {
+            if (meuIdUnico === listaIdsJogadores[0]) {
                 rodarDadosAutomaticos();
             }
         }
 
         if (dados.estadoDados) {
             atualizarVisualDados(dados.estadoDados.t1, dados.estadoDados.t2, dados.estadoDados.num);
+
+            let chaveSorteioID = `${dados.estadoDados.t1}_${dados.estadoDados.t2}_${dados.estadoDados.num}`;
+            if (ultimoSorteioProcessado !== chaveSorteioID) {
+                ultimoSorteioProcessado = chaveSorteioID;
+                calcularPremios(dados.estadoDados.t1, dados.estadoDados.t2, dados.estadoDados.num);
+
+                if (!temporizadorID) {
+                    let segundosRestantes = 5;
+                    let ehAnfitriao = (meuIdUnico === listaIdsJogadores[0]);
+
+                    temporizadorID = setInterval(() => {
+                        let statusEl = document.getElementById('status-jogo');
+                        if (statusEl) {
+                            statusEl.innerText = `Próxima rodada em ${segundosRestantes} segundos...`;
+                        }
+                        segundosRestantes--;
+
+                        if (segundosRestantes < 0) {
+                            limparEIniciarNovaRodada(ehAnfitriao);
+                        }
+                    }, 1000);
+                }
+            }
         } else {
-            // Se não há dados sorteados, esconde o botão de nova rodada e limpa o destaque
-            document.getElementById('btn-nova-rodada').style.display = 'none';
+            if (temporizadorID) {
+                clearInterval(temporizadorID);
+                temporizadorID = null;
+            }
+
             document.querySelectorAll('.linha-tabuleiro').forEach(l => l.classList.remove('linha-destacada'));
             document.getElementById('dado-t1').innerText = '?';
             document.getElementById('dado-t2').innerText = '?';
@@ -228,24 +262,58 @@ function rodarDadosAutomaticos() {
     set(estadoRef, { t1, t2, num });
 }
 
+function calcularPremios(t1, t2, numSorteado) {
+    const nomesTimesMap = { 1: "Corinthians", 2: "Palmeiras", 3: "Flamengo", 4: "Grêmio" };
+    let nomeT1 = nomesTimesMap[t1];
+    let nomeT2 = nomesTimesMap[t2];
+
+    let premioTotalRodada = 0;
+
+    for (let [chave, valorApostado] of Object.entries(minhasApostas)) {
+        let [timeApostado, numApostado] = chave.split('_');
+        numApostado = parseInt(numApostado);
+
+        let acertouTime = (timeApostado === nomeT1 || timeApostado === nomeT2);
+        let acertouNumero = (numApostado === numSorteado);
+
+        if (acertouTime && acertouNumero) {
+            // Acertou o time E o número: Multiplica pelo número sorteado (ex: aposta * numSorteado ou equivalente)
+            premioTotalRodada += valorApostado * numSorteado; 
+        } else if (acertouTime) {
+            // Acertou apenas o time (errou o número): Ganha o dobro da aposta
+            premioTotalRodada += valorApostado * 2; 
+        }
+    }
+
+    if (premioTotalRodada > 0) {
+        meuSaldo += premioTotalRodada;
+        document.getElementById('span-saldo').innerText = meuSaldo;
+    }
+
+    minhasApostas = {};
+    const meuRef = ref(db, `salas/${minhaSala}/jogadores/${meuIdUnico}`);
+    onValue(meuRef, (snapshot) => {
+        let dadosUser = snapshot.val();
+        if (dadosUser) {
+            set(meuRef, {
+                nome: dadosUser.nome,
+                saldo: meuSaldo,
+                pronto: true,
+                apostas: {}
+            });
+        }
+    }, { onlyOnce: true });
+}
+
 function atualizarVisualDados(t1, t2, num) {
     const nomesTimesMap = { 1: "Corinthians", 2: "Palmeiras", 3: "Flamengo", 4: "Grêmio" };
-    const nomeT1 = nomesTimesMap[t1];
-    const nomeT2 = nomesTimesMap[t2];
-
     document.getElementById('dado-t1').innerText = `T${t1}`;
     document.getElementById('dado-t2').innerText = `T${t2}`;
     document.getElementById('dado-num').innerText = num;
-    
-    document.getElementById('status-jogo').innerText = 
-        `Sorteio: ${nomeT1} e ${nomeT2} | Número da Sorte: ${num}`;
 
     document.querySelectorAll('.linha-tabuleiro').forEach(l => l.classList.remove('linha-destacada'));
     let linhaAtiva = document.getElementById(`linha-${num}`);
     if (linhaAtiva) {
         linhaAtiva.classList.add('linha-destacada');
     }
-
-    // Mostra o botão para iniciar a próxima rodada
-    document.getElementById('btn-nova-rodada').style.display = 'block';
 }
