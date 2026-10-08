@@ -7,7 +7,7 @@ body {
     padding: 10px;
 }
 .container {
-    max-width: 650px;
+    max-width: 700px;
     margin: 0 auto;
     background: #0f2e24;
     padding: 15px;
@@ -88,51 +88,56 @@ button:hover {
 .dado.numero {
     background: #ffeb3b;
 }
-.tabuleiro-mesa {
-    display: flex;
+
+/* Estilo da Lona do Tabuleiro */
+.tabuleiro-lona {
     background: #f4d03f;
-    color: #000;
+    border: 4px solid #fff;
     border-radius: 8px;
-    overflow: hidden;
     margin-top: 20px;
-    border: 3px solid #fff;
-}
-.coluna-numeros {
-    width: 35%;
+    padding: 8px;
     display: flex;
     flex-direction: column;
+    gap: 6px;
 }
-.num-celula {
+.linha-tabuleiro {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.numero-lona {
+    width: 35px;
+    height: 45px;
+    background: #d4ac0d;
+    color: #000;
+    font-size: 24px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    border: 2px solid #b7950b;
+}
+.casa-time {
     flex: 1;
-    border: 1px solid #b7950b;
-    font-size: 28px;
-    font-weight: bold;
+    height: 45px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f9e79f;
-    min-height: 45px;
-}
-.campos-times {
-    width: 65%;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    gap: 2px;
-    background: #b7950b;
-}
-.time-box {
-    background: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    font-size: 12px;
     font-weight: bold;
-    font-size: 14px;
-    min-height: 95px;
-    padding: 5px;
-    text-align: center;
+    border-radius: 4px;
+    border: 2px solid rgba(0,0,0,0.2);
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
 .cor-corinthians { background: #2c3e50; color: #fff; }
 .cor-palmeiras { background: #1e8449; color: #fff; }
 .cor-flamengo { background: #c0392b; color: #fff; }
 .cor-gremio { background: #2980b9; color: #fff; }
+
+/* Destaque quando a linha do número é sorteada */
+.linha-destacada .numero-lona {
+    background: #ff5722 !important;
+    color: #fff !important;
+    transform: scale(1.05);
+}
