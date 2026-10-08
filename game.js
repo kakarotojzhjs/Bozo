@@ -18,7 +18,7 @@ let meuNome = "";
 let minhaSala = "";
 let meuIdUnico = "user_" + Math.random().toString(36).substr(2, 9);
 let meuSaldo = 1000;
-let minhasApostas = {}; // Ex: { "Corinthians_1": 100, "Flamengo_3": 200 }
+let minhasApostas = {}; 
 
 let timeSelecionadoModal = "";
 let numeroSelecionadoModal = null;
@@ -49,6 +49,15 @@ window.entrarNaMesa = function() {
 };
 
 window.abrirPainelAposta = function(time, numero) {
+    // Só deixa apostar se a rodada ainda não tiver sido sorteada
+    const salaRef = ref(db, `salas/${minhaSala}/estadoDados`);
+    onValue(salaRef, (snapshot) => {
+        if (snapshot.exists()) {
+            alert("Aguarde a nova rodada comear para apostar!");
+            return;
+        }
+    }, { onlyOnce: true });
+
     timeSelecionadoModal = time;
     numeroSelecionadoModal = numero;
     document.getElementById('titulo-modal').innerText = `Apostar em ${time} (Nº ${numero})`;
@@ -77,7 +86,6 @@ window.confirmarApostaModal = function() {
     let chaveAposta = `${timeSelecionadoModal}_${numeroSelecionadoModal}`;
     minhasApostas[chaveAposta] = (minhasApostas[chaveAposta] || 0) + qtd;
 
-    // Atualiza no Firebase
     const minhasRef = ref(db, `salas/${minhaSala}/jogadores/${meuIdUnico}`);
     set(minhasRef, {
         nome: meuNome,
@@ -90,6 +98,11 @@ window.confirmarApostaModal = function() {
 };
 
 window.finalizarAposta = function() {
+    if (Object.keys(minhasApostas).length === 0) {
+        alert("Faça pelo menos uma aposta antes de finalizar!");
+        return;
+    }
+
     const meuRef = ref(db, `salas/${minhaSala}/jogadores/${meuIdUnico}`);
     set(meuRef, {
         nome: meuNome,
@@ -98,8 +111,39 @@ window.finalizarAposta = function() {
         apostas: minhasApostas
     });
 
-    document.getElementById('btn-finalizar').disabled = true;
-    document.getElementById('btn-finalizar').innerText = "Aguardando outros jogadores...";
+    let btn = document.getElementById('btn-finalizar');
+    btn.disabled = true;
+    btn.innerText = "Aguardando outros jogadores...";
+};
+
+window.novaRodada = function() {
+    // Limpa apostas locais e reseta estado no Firebase para todos
+    minhasApostas = {};
+    
+    const salaRef = ref(db, `salas/${minhaSala}`);
+    set(ref(db, `salas/${minhaSala}/estadoDados`), null);
+
+    // Reseta o status de pronto de todos os jogadores na sala
+    onValue(ref(db, `salas/${minhaSala}/jogadores`), (snapshot) => {
+        const jogs = snapshot.val();
+        if (jogs) {
+            Object.keys(jogs.forEach || jogs).forEach(id => {
+                // Mantém o saldo atual de cada um, mas tira o "pronto" e limpa apostas
+                let j = jogs[id];
+                set(ref(db, `salas/${minhaSala}/jogadores/${id}`), {
+                    nome: j.nome,
+                    saldo: j.saldo,
+                    pronto: false,
+                    apostas: {}
+                });
+            });
+        }
+    }, { onlyOnce: true });
+
+    let btn = document.getElementById('btn-finalizar');
+    btn.disabled = false;
+    btn.innerText = "🔒 Finalizar Aposta";
+    document.getElementById('btn-nova-rodada').style.display = 'none';
 };
 
 function ouvirSalaFirebase() {
@@ -109,7 +153,6 @@ function ouvirSalaFirebase() {
         const dados = snapshot.val();
         if (!dados) return;
 
-        // Atualiza lista de jogadores e soma geral de apostas por casa
         const listaUI = document.getElementById('lista-jogadores');
         listaUI.innerHTML = '';
         
@@ -131,7 +174,6 @@ function ouvirSalaFirebase() {
                     todosProntos = false;
                 }
 
-                // Soma as apostas de todos para exibir nas caixas do tabuleiro
                 if (j.apostas) {
                     for (let [casa, valor] of Object.entries(j.apostas)) {
                         somaTotalApostasCasas[casa] = (somaTotalApostasCasas[casa] || 0) + valor;
@@ -140,13 +182,12 @@ function ouvirSalaFirebase() {
             });
         }
 
-        // Atualiza os textos de apostas nas caixas do tabuleiro visual
+        // Atualiza os valores visuais nas caixas do tabuleiro
         document.querySelectorAll('.casa-time').forEach(el => {
             el.querySelector('small').innerHTML = `Apostas: 0`;
         });
         for (let [casa, total] of Object.entries(somaTotalApostasCasas)) {
             let [t, n] = casa.split('_');
-            // Procura a célula correspondente
             let linhaEl = document.getElementById(`linha-${n}`);
             if (linhaEl) {
                 let caixas = linhaEl.querySelectorAll('.casa-time');
@@ -158,7 +199,7 @@ function ouvirSalaFirebase() {
             }
         }
 
-        // Se todos estiverem prontos e os dados ainda não foram sorteados, o anfitrião/sistema sorteia
+        // Se todos estiverem prontos e os dados ainda não foram sorteados
         if (totalJogadores > 0 && todosProntos && !dados.estadoDados) {
             if (meuIdUnico === Object.keys(dados.jogadores)[0]) {
                 rodarDadosAutomaticos();
@@ -167,14 +208,21 @@ function ouvirSalaFirebase() {
 
         if (dados.estadoDados) {
             atualizarVisualDados(dados.estadoDados.t1, dados.estadoDados.t2, dados.estadoDados.num);
+        } else {
+            // Se não há dados sorteados, esconde o botão de nova rodada e limpa o destaque
+            document.getElementById('btn-nova-rodada').style.display = 'none';
+            document.querySelectorAll('.linha-tabuleiro').forEach(l => l.classList.remove('linha-destacada'));
+            document.getElementById('dado-t1').innerText = '?';
+            document.getElementById('dado-t2').innerText = '?';
+            document.getElementById('dado-num').innerText = '?';
         }
     });
 }
 
 function rodarDadosAutomaticos() {
-    let t1 = Math.floor(Math.random() * 4) + 1; // 1 a 4 (Times)
+    let t1 = Math.floor(Math.random() * 4) + 1; 
     let t2 = Math.floor(Math.random() * 4) + 1;
-    let num = Math.floor(Math.random() * 6) + 1; // 1 a 6 (Número)
+    let num = Math.floor(Math.random() * 6) + 1; 
 
     const estadoRef = ref(db, `salas/${minhaSala}/estadoDados`);
     set(estadoRef, { t1, t2, num });
@@ -197,4 +245,7 @@ function atualizarVisualDados(t1, t2, num) {
     if (linhaAtiva) {
         linhaAtiva.classList.add('linha-destacada');
     }
+
+    // Mostra o botão para iniciar a próxima rodada
+    document.getElementById('btn-nova-rodada').style.display = 'block';
 }
