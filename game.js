@@ -195,13 +195,14 @@ function ouvirSalaFirebase() {
         document.querySelectorAll('.casa-time').forEach(el => {
             el.querySelector('small').innerHTML = `Apostas: 0`;
         });
+        
         for (let [casa, total] of Object.entries(somaTotalApostasCasas)) {
             let [t, n] = casa.split('_');
             let linhaEl = document.getElementById(`linha-${n}`);
             if (linhaEl) {
                 let caixas = linhaEl.querySelectorAll('.casa-time');
                 caixas.forEach(c => {
-                    if (c.classList.contains(`cor-${t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "")}`)) {
+                    if (c.innerText.toLowerCase().includes(t.toLowerCase())) {
                         c.querySelector('small').innerHTML = `Apostas: ${total}`;
                     }
                 });
@@ -222,7 +223,6 @@ function ouvirSalaFirebase() {
                 ultimoSorteioProcessado = chaveSorteioID;
                 calcularPremios(dados.estadoDados.t1, dados.estadoDados.t2, dados.estadoDados.num);
 
-                // Dispara a contagem regressiva de 5 segundos estritamente após o resultado sair
                 if (!temporizadorID) {
                     let segundosRestantes = 5;
                     let ehAnfitriao = (meuIdUnico === listaIdsJogadores[0]);
@@ -246,6 +246,7 @@ function ouvirSalaFirebase() {
                 temporizadorID = null;
             }
 
+            document.querySelectorAll('.casa-time').forEach(c => c.classList.remove('casa-sorteada'));
             document.querySelectorAll('.linha-tabuleiro').forEach(l => l.classList.remove('linha-destacada'));
             document.getElementById('dado-t1').innerText = '?';
             document.getElementById('dado-t2').innerText = '?';
@@ -306,13 +307,26 @@ function calcularPremios(t1, t2, numSorteado) {
 
 function atualizarVisualDados(t1, t2, num) {
     const nomesTimesMap = { 1: "Corinthians", 2: "Palmeiras", 3: "Flamengo", 4: "Grêmio" };
+    let nomeT1 = nomesTimesMap[t1];
+    let nomeT2 = nomesTimesMap[t2];
+
     document.getElementById('dado-t1').innerText = `T${t1}`;
     document.getElementById('dado-t2').innerText = `T${t2}`;
     document.getElementById('dado-num').innerText = num;
 
+    document.querySelectorAll('.casa-time').forEach(c => c.classList.remove('casa-sorteada'));
     document.querySelectorAll('.linha-tabuleiro').forEach(l => l.classList.remove('linha-destacada'));
+
     let linhaAtiva = document.getElementById(`linha-${num}`);
     if (linhaAtiva) {
         linhaAtiva.classList.add('linha-destacada');
+
+        let caixas = linhaAtiva.querySelectorAll('.casa-time');
+        caixas.forEach(c => {
+            let textoCaixa = c.innerText.toLowerCase();
+            if (textoCaixa.includes(nomeT1.toLowerCase()) || textoCaixa.includes(nomeT2.toLowerCase())) {
+                c.classList.add('casa-sorteada');
+            }
+        });
     }
 }
