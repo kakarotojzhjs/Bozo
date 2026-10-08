@@ -222,6 +222,7 @@ function ouvirSalaFirebase() {
                 ultimoSorteioProcessado = chaveSorteioID;
                 calcularPremios(dados.estadoDados.t1, dados.estadoDados.t2, dados.estadoDados.num);
 
+                // Dispara a contagem regressiva de 5 segundos estritamente após o resultado sair
                 if (!temporizadorID) {
                     let segundosRestantes = 5;
                     let ehAnfitriao = (meuIdUnico === listaIdsJogadores[0]);
@@ -229,7 +230,7 @@ function ouvirSalaFirebase() {
                     temporizadorID = setInterval(() => {
                         let statusEl = document.getElementById('status-jogo');
                         if (statusEl) {
-                            statusEl.innerText = `Próxima rodada em ${segundosRestantes} segundos...`;
+                            statusEl.innerText = `Resultado exibido! Próxima rodada em ${segundosRestantes}s...`;
                         }
                         segundosRestantes--;
 
@@ -277,10 +278,8 @@ function calcularPremios(t1, t2, numSorteado) {
         let acertouNumero = (numApostado === numSorteado);
 
         if (acertouTime && acertouNumero) {
-            // Acertou o time E o número: Multiplica pelo número sorteado (ex: aposta * numSorteado ou equivalente)
             premioTotalRodada += valorApostado * numSorteado; 
         } else if (acertouTime) {
-            // Acertou apenas o time (errou o número): Ganha o dobro da aposta
             premioTotalRodada += valorApostado * 2; 
         }
     }
