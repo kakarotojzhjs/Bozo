@@ -3,44 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jogo de Dados de Times (Tabuleiro)</title>
+    <title>Tabuleiro de Times & Dados - Multiplayer</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
         <h1>🎲 Tabuleiro de Times & Dados</h1>
         
-        <!-- Tela de Entrada -->
+        <!-- Tela de Entrada na Mesa -->
         <div id="sala-container">
-            <input type="text" id="nome-jogador" placeholder="Seu Nome">
-            <input type="text" id="codigo-sala" placeholder="Código da Sala">
-            <button onclick="entrarSala()">Entrar na Mesa</button>
+            <input type="text" id="nome-jogador" placeholder="Seu Nome (Ex: Kakaroto)">
+            <input type="text" id="codigo-sala" placeholder="Código da Sala (Ex: 12345)">
+            <select id="select-time">
+                <option value="Corinthians">Corinthians</option>
+                <option value="Palmeiras">Palmeiras</option>
+                <option value="Flamengo">Flamengo</option>
+                <option value="Grêmio">Grêmio</option>
+            </select>
+            <button onclick="entrarNaMesa()">Entrar na Mesa</button>
         </div>
 
-        <!-- Tela do Tabuleiro -->
+        <!-- Tela do Jogo / Tabuleiro -->
         <div id="jogo-container" style="display: none;">
             <h2>Mesa: <span id="span-sala"></span></h2>
-            <p id="vez-jogador">A jogar...</p>
+            
+            <!-- Painel com os Bonequinhos / Usuários Online -->
+            <div class="painel-jogadores">
+                <h3>👥 Jogadores na Mesa:</h3>
+                <ul id="lista-jogadores"></ul>
+            </div>
 
-            <!-- Área dos 3 Dados (2 para Times, 1 para Número) -->
+            <p id="status-jogo">Aguardando o anfitrião rodar os dados...</p>
+
+            <!-- Área dos 3 Dados Globais (Sorteados pelo Sistema) -->
             <div class="dados-container-geral">
                 <div class="grupo-dado">
-                    <span class="legenda-dado">Dado Time 1</span>
+                    <span class="legenda-dado">Time 1</span>
                     <div class="dado" id="dado-t1">?</div>
                 </div>
                 <div class="grupo-dado">
-                    <span class="legenda-dado">Dado Time 2</span>
+                    <span class="legenda-dado">Time 2</span>
                     <div class="dado" id="dado-t2">?</div>
                 </div>
                 <div class="grupo-dado">
-                    <span class="legenda-dado">Dado Número (1-6)</span>
+                    <span class="legenda-dado">Número (1-6)</span>
                     <div class="dado numero" id="dado-num">?</div>
                 </div>
             </div>
 
-            <button id="btn-rolar" onclick="jogarDadosTabuleiro()">Lançar os 3 Dados 🎲</button>
+            <!-- Botão Global para Sortear os Dados para Todos -->
+            <button id="btn-rodar-global" onclick="rodarDadosGlobais()">🎲 Sortear Dados Globais</button>
 
-            <!-- O Tabuleiro Visual Estilo Toalha/Mesa -->
+            <!-- O Tabuleiro Visual Estilo Mesa -->
             <div class="tabuleiro-mesa">
                 <div class="coluna-numeros">
                     <div class="num-celula" id="cel-1">1</div>
@@ -60,6 +74,7 @@
         </div>
     </div>
 
-    <script src="game.js"></script>
+    <!-- Scripts do Firebase (SDK Modular) -->
+    <script type="module" src="game.js"></script>
 </body>
 </html>
