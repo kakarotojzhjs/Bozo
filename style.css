@@ -113,6 +113,8 @@ button:hover {
     border-radius: 4px;
     border: 2px solid #b7950b;
 }
+
+/* Cor padrão unificada para todos os quadrados dos times */
 .casa-time {
     flex: 1;
     height: 50px;
@@ -125,6 +127,8 @@ button:hover {
     border-radius: 4px;
     border: 2px solid rgba(0,0,0,0.2);
     cursor: pointer;
+    background: #34495e; 
+    color: #fff;
     transition: transform 0.1s;
 }
 .casa-time:active {
@@ -135,10 +139,13 @@ button:hover {
     font-weight: normal;
     color: #ffeb3b;
 }
-.cor-corinthians { background: #2c3e50; color: #fff; }
-.cor-palmeiras { background: #1e8449; color: #fff; }
-.cor-flamengo { background: #c0392b; color: #fff; }
-.cor-gremio { background: #2980b9; color: #fff; }
+
+/* Cor especial que o quadrado do time assume ao ser sorteado */
+.casa-sorteada {
+    background: #e67e22 !important; 
+    border: 2px solid #fff !important;
+    color: #fff !important;
+}
 
 .linha-destacada .numero-lona {
     background: #ff5722 !important;
