@@ -1,60 +1,42 @@
-// Variável para guardar o estado do socket (ligação em tempo real)
-let socket = null;
-let dadosValores = [1, 2, 3, 4, 5];
-let dadosSegurados = [false, false, false, false, false];
-let tentativasRestantes = 3;
+let meuNome = "";
+let minhaSala = "";
 
 function entrarSala() {
-    const nome = document.getElementById('nome-jogador').value;
-    const sala = document.getElementById('codigo-sala').value;
+    meuNome = document.getElementById('nome-jogador').value;
+    minhaSala = document.getElementById('codigo-sala').value;
 
-    if (!nome || !sala) {
-        alert("Por favor, preencha o seu nome e o código da sala!");
+    if (!meuNome || !minhaSala) {
+        alert("Preencha o nome e a sala!");
         return;
     }
 
-    // Esconde a tela de login e mostra a tela do jogo
     document.getElementById('sala-container').style.display = 'none';
     document.getElementById('jogo-container').style.display = 'block';
-    document.getElementById('span-sala').innerText = sala;
-    document.getElementById('vez-jogador').innerText = `Bem-vindo, ${nome}! Aguardando o servidor...`;
-
-    // Aqui fazemos a conexão com o servidor de teste (fase seguinte)
-    // socket = io('URL_DO_SEU_SERVIDOR_AQUI');
+    document.getElementById('span-sala').innerText = minhaSala;
+    document.getElementById('vez-jogador').innerText = `Jogador: ${meuNome} pronto na mesa!`;
 }
 
-function toggleSegurar(indice) {
-    dadosSegurados[indice] = !dadosSegurados[indice];
-    const elementoDado = document.querySelectorAll('.dado')[indice];
+function jogarDadosTabuleiro() {
+    // Simula os 3 dados da mesa
+    // 2 dados de times (ex: sorteia valores de 1 a 4 para escolher o time)
+    let t1 = Math.floor(Math.random() * 4) + 1;
+    let t2 = Math.floor(Math.random() * 4) + 1;
     
-    if (dadosSegurados[indice]) {
-        elementoDado.classList.add('segurado');
-    } else {
-        elementoDado.classList.remove('segurado');
+    // 1 dado numérico de 1 a 6 (igualzinho ao da coluna do tabuleiro)
+    let numSorteado = Math.floor(Math.random() * 6) + 1;
+
+    // Mostra nos elementos visuais dos dados
+    document.getElementById('dado-t1').innerText = `T${t1}`;
+    document.getElementById('dado-t2').innerText = `T${t2}`;
+    document.getElementById('dado-num').innerText = numSorteado;
+
+    // Destaca visualmente a célula do número correspondente no tabuleiro
+    document.querySelectorAll('.num-celula').forEach(c => c.style.background = '#f9e79f');
+    let celulaAtiva = document.getElementById(`cel-${numSorteado}`);
+    if (celulaAtiva) {
+        celulaAtiva.style.background = '#ff5722'; // Cor de destaque na aposta
+        celulaAtiva.style.color = '#fff';
     }
+
+    document.getElementById('vez-jogador').innerText = `${meuNome} lançou! Caiu no Número ${numSorteado}!`;
 }
-
-function rolarDados() {
-    if (tentativasRestantes <= 0) return;
-
-    for (let i = 0; i < 5; i++) {
-        if (!dadosSegurados[i]) {
-            dadosValores[i] = Math.floor(Math.random() * 6) + 1;
-        }
-    }
-
-    // Atualiza os números visuais nos dados
-    const elementosDados = document.querySelectorAll('.dado');
-    elementosDados.forEach((el, index) => {
-        el.innerText = dadosValores[index];
-    });
-
-    tentativasRestantes--;
-    document.getElementById('btn-rolar').innerText = `Rolar Dados (${tentativasRestantes})`;
-
-    if (tentativasRestantes === 0) {
-        document.getElementById('btn-rolar').disabled = true;
-        document.getElementById('btn-rolar').style.backgroundColor = '#ccc';
-    }
-}
-  
