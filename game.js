@@ -96,10 +96,10 @@ function atualizarVisualDados(t1, t2, num) {
     document.getElementById('status-jogo').innerText = 
         `Resultado Global: Time 1 (${nomesTimes[t1]}) + Time 2 (${nomesTimes[t2]}) | Número: ${num}`;
 
-    document.querySelectorAll('.num-celula').forEach(c => c.style.background = '#f9e79f');
-    let celulaAtiva = document.getElementById(`cel-${num}`);
-    if (celulaAtiva) {
-        celulaAtiva.style.background = '#ff5722';
-        celulaAtiva.style.color = '#fff';
+    // Atualiza o destaque na lona nova do tabuleiro
+    document.querySelectorAll('.linha-tabuleiro').forEach(l => l.classList.remove('linha-destacada'));
+    let linhaAtiva = document.getElementById(`linha-${num}`);
+    if (linhaAtiva) {
+        linhaAtiva.classList.add('linha-destacada');
     }
 }
