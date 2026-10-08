@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tabuleiro de Times & Dados - Multiplayer</title>
+    <title>Jogo de Dados e Tabuleiro de Times</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1>🎲 Tabuleiro de Times & Dados</h1>
+        <h1>🎲 Jogo de Tabuleiro & Dados</h1>
         
         <!-- Tela de Entrada na Mesa -->
         <div id="sala-container">
@@ -27,15 +27,15 @@
         <div id="jogo-container" style="display: none;">
             <h2>Mesa: <span id="span-sala"></span></h2>
             
-            <!-- Painel com os Bonequinhos / Usuários Online -->
+            <!-- Painel com os Jogadores Online -->
             <div class="painel-jogadores">
                 <h3>👥 Jogadores na Mesa:</h3>
                 <ul id="lista-jogadores"></ul>
             </div>
 
-            <p id="status-jogo">Aguardando o anfitrião rodar os dados...</p>
+            <p id="status-jogo">Aguardando rodar os dados...</p>
 
-            <!-- Área dos 3 Dados Globais (Sorteados pelo Sistema) -->
+            <!-- Área dos 3 Dados Globais -->
             <div class="dados-container-geral">
                 <div class="grupo-dado">
                     <span class="legenda-dado">Time 1</span>
@@ -51,30 +51,56 @@
                 </div>
             </div>
 
-            <!-- Botão Global para Sortear os Dados para Todos -->
-            <button id="btn-rodar-global" onclick="rodarDadosGlobais()">🎲 Sortear Dados Globais</button>
+            <button id="btn-rodar-global" onclick="rodarDadosGlobais()">🎲 Sortear Dados da Rodada</button>
 
-            <!-- O Tabuleiro Visual Estilo Mesa -->
-            <div class="tabuleiro-mesa">
-                <div class="coluna-numeros">
-                    <div class="num-celula" id="cel-1">1</div>
-                    <div class="num-celula" id="cel-2">2</div>
-                    <div class="num-celula" id="cel-3">3</div>
-                    <div class="num-celula" id="cel-4">4</div>
-                    <div class="num-celula" id="cel-5">5</div>
-                    <div class="num-celula" id="cel-6">6</div>
+            <!-- Tabuleiro Estilo Lona Real (Linhas de 1 a 6 com as casas dos times) -->
+            <div class="tabuleiro-lona">
+                <div class="linha-tabuleiro" id="linha-1">
+                    <span class="numero-lona">1</span>
+                    <div class="casa-time cor-corinthians">Corinthians</div>
+                    <div class="casa-time cor-palmeiras">Palmeiras</div>
+                    <div class="casa-time cor-flamengo">Flamengo</div>
+                    <div class="casa-time cor-gremio">Grêmio</div>
                 </div>
-                <div class="campos-times">
-                    <div class="time-box cor-corinthians">Corinthians</div>
-                    <div class="time-box cor-palmeiras">Palmeiras</div>
-                    <div class="time-box cor-flamengo">Flamengo</div>
-                    <div class="time-box cor-gremio">Grêmio</div>
+                <div class="linha-tabuleiro" id="linha-2">
+                    <span class="numero-lona">2</span>
+                    <div class="casa-time cor-corinthians">Corinthians</div>
+                    <div class="casa-time cor-palmeiras">Palmeiras</div>
+                    <div class="casa-time cor-flamengo">Flamengo</div>
+                    <div class="casa-time cor-gremio">Grêmio</div>
+                </div>
+                <div class="linha-tabuleiro" id="linha-3">
+                    <span class="numero-lona">3</span>
+                    <div class="casa-time cor-corinthians">Corinthians</div>
+                    <div class="casa-time cor-palmeiras">Palmeiras</div>
+                    <div class="casa-time cor-flamengo">Flamengo</div>
+                    <div class="casa-time cor-gremio">Grêmio</div>
+                </div>
+                <div class="linha-tabuleiro" id="linha-4">
+                    <span class="numero-lona">4</span>
+                    <div class="casa-time cor-corinthians">Corinthians</div>
+                    <div class="casa-time cor-palmeiras">Palmeiras</div>
+                    <div class="casa-time cor-flamengo">Flamengo</div>
+                    <div class="casa-time cor-gremio">Grêmio</div>
+                </div>
+                <div class="linha-tabuleiro" id="linha-5">
+                    <span class="numero-lona">5</span>
+                    <div class="casa-time cor-corinthians">Corinthians</div>
+                    <div class="casa-time cor-palmeiras">Palmeiras</div>
+                    <div class="casa-time cor-flamengo">Flamengo</div>
+                    <div class="casa-time cor-gremio">Grêmio</div>
+                </div>
+                <div class="linha-tabuleiro" id="linha-6">
+                    <span class="numero-lona">6</span>
+                    <div class="casa-time cor-corinthians">Corinthians</div>
+                    <div class="casa-time cor-palmeiras">Palmeiras</div>
+                    <div class="casa-time cor-flamengo">Flamengo</div>
+                    <div class="casa-time cor-gremio">Grêmio</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Scripts do Firebase (SDK Modular) -->
     <script type="module" src="game.js"></script>
 </body>
 </html>
