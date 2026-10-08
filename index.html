@@ -3,44 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bozo em Equipe Multiplayer</title>
+    <title>Jogo de Dados de Times (Tabuleiro)</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1>🎲 Bozo em Equipe</h1>
+        <h1>🎲 Tabuleiro de Times & Dados</h1>
         
+        <!-- Tela de Entrada -->
         <div id="sala-container">
             <input type="text" id="nome-jogador" placeholder="Seu Nome">
             <input type="text" id="codigo-sala" placeholder="Código da Sala">
-            <button onclick="entrarSala()">Entrar na Sala</button>
+            <button onclick="entrarSala()">Entrar na Mesa</button>
         </div>
 
+        <!-- Tela do Tabuleiro -->
         <div id="jogo-container" style="display: none;">
-            <h2>Sala: <span id="span-sala"></span></h2>
-            <p id="vez-jogador">Aguardando início...</p>
+            <h2>Mesa: <span id="span-sala"></span></h2>
+            <p id="vez-jogador">A jogar...</p>
 
-            <!-- Área dos Dados -->
-            <div class="dados-area">
-                <div class="dado" onclick="toggleSegurar(0)">1</div>
-                <div class="dado" onclick="toggleSegurar(1)">2</div>
-                <div class="dado" onclick="toggleSegurar(2)">3</div>
-                <div class="dado" onclick="toggleSegurar(3)">4</div>
-                <div class="dado" onclick="toggleSegurar(4)">5</div>
+            <!-- Área dos 3 Dados (2 para Times, 1 para Número) -->
+            <div class="dados-container-geral">
+                <div class="grupo-dado">
+                    <span class="legenda-dado">Dado Time 1</span>
+                    <div class="dado" id="dado-t1">?</div>
+                </div>
+                <div class="grupo-dado">
+                    <span class="legenda-dado">Dado Time 2</span>
+                    <div class="dado" id="dado-t2">?</div>
+                </div>
+                <div class="grupo-dado">
+                    <span class="legenda-dado">Dado Número (1-6)</span>
+                    <div class="dado numero" id="dado-num">?</div>
+                </div>
             </div>
-            
-            <button id="btn-rolar" onclick="rolarDados()">Rolar Dados (3)</button>
 
-            <!-- Placar da Equipe -->
-            <div class="placar">
-                <h3>Placar da Partida</h3>
-                <div id="tabela-placar"></div>
+            <button id="btn-rolar" onclick="jogarDadosTabuleiro()">Lançar os 3 Dados 🎲</button>
+
+            <!-- O Tabuleiro Visual Estilo Toalha/Mesa -->
+            <div class="tabuleiro-mesa">
+                <div class="coluna-numeros">
+                    <div class="num-celula" id="cel-1">1</div>
+                    <div class="num-celula" id="cel-2">2</div>
+                    <div class="num-celula" id="cel-3">3</div>
+                    <div class="num-celula" id="cel-4">4</div>
+                    <div class="num-celula" id="cel-5">5</div>
+                    <div class="num-celula" id="cel-6">6</div>
+                </div>
+                <div class="campos-times">
+                    <div class="time-box cor-corinthians">Corinthians</div>
+                    <div class="time-box cor-palmeiras">Palmeiras</div>
+                    <div class="time-box cor-flamengo">Flamengo</div>
+                    <div class="time-box cor-gremio">Grêmio</div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Importa o Socket.io para comunicação em tempo real -->
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="game.js"></script>
 </body>
 </html>
