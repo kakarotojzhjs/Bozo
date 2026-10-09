@@ -23,7 +23,6 @@ let minhasApostas = {};
 let timeSelecionadoModal = "";
 let numeroSelecionadoModal = null;
 let ultimoSorteioProcessado = null; 
-let temporizadorID = null;
 
 window.entrarNaMesa = function() {
     meuNome = document.getElementById('nome-jogador').value.trim();
@@ -43,6 +42,7 @@ window.entrarNaMesa = function() {
         nome: meuNome,
         saldo: meuSaldo,
         pronto: false,
+        clicouContinuar: false,
         apostas: {}
     });
 
@@ -88,12 +88,18 @@ window.confirmarApostaModal = function() {
     minhasApostas[chaveAposta] = (minhasApostas[chaveAposta] || 0) + qtd;
 
     const minhasRef = ref(db, `salas/${minhaSala}/jogadores/${meuIdUnico}`);
-    set(minhasRef, {
-        nome: meuNome,
-        saldo: meuSaldo,
-        pronto: false,
-        apostas: minhasApostas
-    });
+    onValue(minhasRef, (snapshot) => {
+        let dadosUser = snapshot.val();
+        if (dadosUser) {
+            set(minhasRef, {
+                nome: dadosUser.nome,
+                saldo: meuSaldo,
+                pronto: false,
+                clicouContinuar: false,
+                apostas: minhasApostas
+            });
+        }
+    }, { onlyOnce: true });
 
     fecharModal();
 };
@@ -105,58 +111,45 @@ window.finalizarAposta = function() {
     }
 
     const meuRef = ref(db, `salas/${minhaSala}/jogadores/${meuIdUnico}`);
-    set(meuRef, {
-        nome: meuNome,
-        saldo: meuSaldo,
-        pronto: true,
-        apostas: minhasApostas
-    });
+    onValue(meuRef, (snapshot) => {
+        let dadosUser = snapshot.val();
+        if (dadosUser) {
+            set(meuRef, {
+                nome: dadosUser.nome,
+                saldo: meuSaldo,
+                pronto: true,
+                clicouContinuar: false,
+                apostas: minhasApostas
+            });
+        }
+    }, { onlyOnce: true });
 
     let btn = document.getElementById('btn-finalizar');
     btn.disabled = true;
     btn.innerText = "Aguardando outros jogadores...";
 };
 
-function limparEIniciarNovaRodada(isAnfitriao) {
-    if (temporizadorID) {
-        clearInterval(temporizadorID);
-        temporizadorID = null;
-    }
-
-    minhasApostas = {};
-    ultimoSorteioProcessado = null;
-    
-    if (isAnfitriao) {
-        set(ref(db, `salas/${minhaSala}/estadoDados`), null);
-    }
-
-    const jogsRef = ref(db, `salas/${minhaSala}/jogadores`);
-    onValue(jogsRef, (snapshot) => {
-        const jogs = snapshot.val();
-        if (jogs) {
-            Object.keys(jogs).forEach(id => {
-                let j = jogs[id];
-                set(ref(db, `salas/${minhaSala}/jogadores/${id}`), {
-                    nome: j.nome,
-                    saldo: j.saldo,
-                    pronto: false,
-                    apostas: {}
-                });
+window.clicarContinuar = function() {
+    const meuRef = ref(db, `salas/${minhaSala}/jogadores/${meuIdUnico}`);
+    onValue(meuRef, (snapshot) => {
+        let dadosUser = snapshot.val();
+        if (dadosUser) {
+            set(meuRef, {
+                nome: dadosUser.nome,
+                saldo: meuSaldo,
+                pronto: true,
+                clicouContinuar: true,
+                apostas: {}
             });
         }
     }, { onlyOnce: true });
 
-    let btn = document.getElementById('btn-finalizar');
-    if (btn) {
-        btn.disabled = false;
-        btn.innerText = "🔒 Finalizar Aposta";
+    let btnCont = document.getElementById('btn-continuar');
+    if (btnCont) {
+        btnCont.disabled = true;
+        btnCont.innerText = "Aguardando os outros jogadores...";
     }
-
-    let statusEl = document.getElementById('status-jogo');
-    if (statusEl) {
-        statusEl.innerText = "Faça as suas apostas nas casas e clique em Finalizar Aposta!";
-    }
-}
+};
 
 function ouvirSalaFirebase() {
     const salaRef = ref(db, `salas/${minhaSala}`);
@@ -169,7 +162,8 @@ function ouvirSalaFirebase() {
         listaUI.innerHTML = '';
         
         let somaTotalApostasCasas = {};
-        let todosProntos = true;
+        let todosProntosParaJogar = true;
+        let todosClicaramContinuar = true;
         let totalJogadores = 0;
         let listaIdsJogadores = [];
 
@@ -181,15 +175,21 @@ function ouvirSalaFirebase() {
             listaIdsJogadores.forEach(id => {
                 let j = jogadoresObj[id];
                 let li = document.createElement('li');
-                let statusPronto = j.pronto ? "✅ Pronto" : "⏳ A apostar";
+                
+                let statusPronto = "";
+                if (dados.estadoDados) {
+                    statusPronto = j.clicouContinuar ? "✅ Viu o resultado" : "👀 Vendo resultado...";
+                } else {
+                    statusPronto = j.pronto ? "✅ Pronto" : "⏳ A apostar";
+                }
+
                 li.innerHTML = `🧸 <b>${j.nome}</b> - ${j.saldo} 🪙 [${statusPronto}]`;
                 listaUI.appendChild(li);
 
-                if (!j.pronto) {
-                    todosProntos = false;
-                }
+                if (!j.pronto) todosProntosParaJogar = false;
+                if (!j.clicouContinuar) todosClicaramContinuar = false;
 
-                if (j.apostas) {
+                if (j.apostas && !dados.estadoDados) {
                     for (let [casa, valor] of Object.entries(j.apostas)) {
                         somaTotalApostasCasas[casa] = (somaTotalApostasCasas[casa] || 0) + valor;
                     }
@@ -214,41 +214,40 @@ function ouvirSalaFirebase() {
             }
         }
 
-        if (totalJogadores > 0 && todosProntos && !dados.estadoDados) {
+        // Se todos apostaram e ainda não há dados, o primeiro jogador roda os dados
+        if (totalJogadores > 0 && todosProntosParaJogar && !dados.estadoDados) {
             if (meuIdUnico === listaIdsJogadores[0]) {
                 rodarDadosAutomaticos();
             }
         }
 
+        // Se todos já clicaram em "Continuar" após ver o resultado, limpa a mesa para a nova rodada
+        if (dados.estadoDados && todosClicaramContinuar) {
+            if (meuIdUnico === listaIdsJogadores[0]) {
+                limparEIniciarNovaRodada();
+            }
+        }
+
         if (dados.estadoDados) {
+            document.getElementById('btn-finalizar').style.display = 'none';
+            document.getElementById('btn-continuar').style.display = 'block';
+            document.getElementById('status-jogo').innerText = "Resultado da Rodada! Analise e clique em Continuar.";
+
             atualizarVisualDados(dados.estadoDados.t1, dados.estadoDados.t2, dados.estadoDados.num);
 
             let chaveSorteioID = `${dados.estadoDados.t1}_${dados.estadoDados.t2}_${dados.estadoDados.num}`;
             if (ultimoSorteioProcessado !== chaveSorteioID) {
                 ultimoSorteioProcessado = chaveSorteioID;
                 calcularPremios(dados.estadoDados.t1, dados.estadoDados.t2, dados.estadoDados.num);
-
-                if (!temporizadorID) {
-                    let segundosRestantes = 5;
-                    let ehAnfitriao = (meuIdUnico === listaIdsJogadores[0]);
-
-                    temporizadorID = setInterval(() => {
-                        let statusEl = document.getElementById('status-jogo');
-                        if (statusEl) {
-                            statusEl.innerText = `Resultado exibido! Próxima rodada em ${segundosRestantes}s...`;
-                        }
-                        segundosRestantes--;
-
-                        if (segundosRestantes < 0) {
-                            limparEIniciarNovaRodada(ehAnfitriao);
-                        }
-                    }, 1000);
-                }
             }
         } else {
-            if (temporizadorID) {
-                clearInterval(temporizadorID);
-                temporizadorID = null;
+            document.getElementById('btn-continuar').style.display = 'none';
+            document.getElementById('btn-finalizar').style.display = 'block';
+            
+            let btnCont = document.getElementById('btn-continuar');
+            if (btnCont) {
+                btnCont.disabled = false;
+                btnCont.innerText = "➡️ Continuar para Próxima Rodada";
             }
 
             document.querySelectorAll('.casa-time').forEach(c => c.classList.remove('casa-sorteada'));
@@ -294,20 +293,41 @@ function calcularPremios(t1, t2, numSorteado) {
         meuSaldo += premioTotalRodada;
         document.getElementById('span-saldo').innerText = meuSaldo;
     }
+}
 
+function limparEIniciarNovaRodada() {
     minhasApostas = {};
-    const meuRef = ref(db, `salas/${minhaSala}/jogadores/${meuIdUnico}`);
-    onValue(meuRef, (snapshot) => {
-        let dadosUser = snapshot.val();
-        if (dadosUser) {
-            set(meuRef, {
-                nome: dadosUser.nome,
-                saldo: meuSaldo,
-                pronto: true,
-                apostas: {}
+    ultimoSorteioProcessado = null;
+    
+    set(ref(db, `salas/${minhaSala}/estadoDados`), null);
+
+    const jogsRef = ref(db, `salas/${minhaSala}/jogadores`);
+    onValue(jogsRef, (snapshot) => {
+        const jogs = snapshot.val();
+        if (jogs) {
+            Object.keys(jogs).forEach(id => {
+                let j = jogs[id];
+                set(ref(db, `salas/${minhaSala}/jogadores/${id}`), {
+                    nome: j.nome,
+                    saldo: j.saldo,
+                    pronto: false,
+                    clicouContinuar: false,
+                    apostas: {}
+                });
             });
         }
     }, { onlyOnce: true });
+
+    let btn = document.getElementById('btn-finalizar');
+    if (btn) {
+        btn.disabled = false;
+        btn.innerText = "🔒 Finalizar Aposta";
+    }
+
+    let statusEl = document.getElementById('status-jogo');
+    if (statusEl) {
+        statusEl.innerText = "Faça as suas apostas nas casas e clique em Finalizar Aposta!";
+    }
 }
 
 function atualizarVisualDados(t1, t2, num) {
@@ -326,7 +346,6 @@ function atualizarVisualDados(t1, t2, num) {
     if (linhaAtiva) {
         linhaAtiva.classList.add('linha-destacada');
 
-        // Pinta especificamente a caixa do Time 1 e a caixa do Time 2 na linha ativa usando o atributo data-time
         let caixa1 = linhaAtiva.querySelector(`[data-time="${nomeT1}"]`);
         let caixa2 = linhaAtiva.querySelector(`[data-time="${nomeT2}"]`);
 
