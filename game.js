@@ -56,13 +56,13 @@ window.abrirPainelAposta = function(time, numero) {
         if (snapshot.exists()) {
             alert("Aguarde a nova rodada começar para apostar!");
             return;
+        } else {
+            timeSelecionadoModal = time;
+            numeroSelecionadoModal = numero;
+            document.getElementById('titulo-modal').innerText = `Apostar em ${time} (Nº ${numero})`;
+            document.getElementById('modal-aposta').style.display = 'flex';
         }
     }, { onlyOnce: true });
-
-    timeSelecionadoModal = time;
-    numeroSelecionadoModal = numero;
-    document.getElementById('titulo-modal').innerText = `Apostar em ${time} (Nº ${numero})`;
-    document.getElementById('modal-aposta').style.display = 'flex';
 };
 
 window.fecharModal = function() {
@@ -150,6 +150,11 @@ function limparEIniciarNovaRodada(isAnfitriao) {
     if (btn) {
         btn.disabled = false;
         btn.innerText = "🔒 Finalizar Aposta";
+    }
+
+    let statusEl = document.getElementById('status-jogo');
+    if (statusEl) {
+        statusEl.innerText = "Faça as suas apostas nas casas e clique em Finalizar Aposta!";
     }
 }
 
@@ -329,4 +334,4 @@ function atualizarVisualDados(t1, t2, num) {
             }
         });
     }
-}
+  }
