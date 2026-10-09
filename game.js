@@ -198,19 +198,19 @@ function ouvirSalaFirebase() {
         }
 
         document.querySelectorAll('.casa-time').forEach(el => {
-            el.querySelector('small').innerHTML = `Apostas: 0`;
+            let spanAposta = el.querySelector('.valor-aposta');
+            if (spanAposta) spanAposta.innerText = "0";
         });
         
         for (let [casa, total] of Object.entries(somaTotalApostasCasas)) {
             let [t, n] = casa.split('_');
             let linhaEl = document.getElementById(`linha-${n}`);
             if (linhaEl) {
-                let caixas = linhaEl.querySelectorAll('.casa-time');
-                caixas.forEach(c => {
-                    if (c.innerText.toLowerCase().includes(t.toLowerCase())) {
-                        c.querySelector('small').innerHTML = `Apostas: ${total}`;
-                    }
-                });
+                let caixa = linhaEl.querySelector(`[data-time="${t}"]`);
+                if (caixa) {
+                    let spanAposta = caixa.querySelector('.valor-aposta');
+                    if (spanAposta) spanAposta.innerText = total;
+                }
             }
         }
 
@@ -326,12 +326,11 @@ function atualizarVisualDados(t1, t2, num) {
     if (linhaAtiva) {
         linhaAtiva.classList.add('linha-destacada');
 
-        let caixas = linhaAtiva.querySelectorAll('.casa-time');
-        caixas.forEach(c => {
-            let textoCaixa = c.innerText.toLowerCase();
-            if (textoCaixa.includes(nomeT1.toLowerCase()) || textoCaixa.includes(nomeT2.toLowerCase())) {
-                c.classList.add('casa-sorteada');
-            }
-        });
+        // Pinta especificamente a caixa do Time 1 e a caixa do Time 2 na linha ativa usando o atributo data-time
+        let caixa1 = linhaAtiva.querySelector(`[data-time="${nomeT1}"]`);
+        let caixa2 = linhaAtiva.querySelector(`[data-time="${nomeT2}"]`);
+
+        if (caixa1) caixa1.classList.add('casa-sorteada');
+        if (caixa2) caixa2.classList.add('casa-sorteada');
     }
-  }
+}
